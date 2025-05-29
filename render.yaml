@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: fastapi-backend
+    runtime: python
+    buildCommand: ""
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: GEMINI_API_KEY
+        value: AIzaSyBiGUvJ-UEAdhXHS39Fc2JMK5eHoajxVuY
