@@ -3,7 +3,7 @@ uvicorn
 google-generativeai
 python-dotenv
 pypdf
-sentence-transformers
+requests
 faiss-cpu
 numpy
 langchain
