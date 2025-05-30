@@ -37,7 +37,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         with open(file_path, "wb") as f:
             f.write(await file.read())
         # Process the PDF and store state
-        msg = process_pdf(file_path)
+        msg = process_pdf(file_path, session_id)
         SESSION_STATE[session_id] = file_path
         return {"message": msg, "session_id": session_id}
     except Exception as e:
@@ -54,11 +54,13 @@ async def chat(request: Request):
         if not session_id or session_id not in SESSION_STATE:
             return {"error": "Invalid or missing session_id. Please upload a PDF first."}
         # Query the PDF for relevant context
-        top_chunks = query_pdf(message, top_k=2)
+        top_chunks = query_pdf(message, session_id, top_k=2)
         context = "\n\n".join(top_chunks)
         prompt = f"Context from PDF:\n{context}\n\nUser question: {message}\n\nAnswer:"
         response = model.generate_content(prompt)
         answer = response.text
+        # Optionally, clear session after use to free memory
+        del SESSION_STATE[session_id]
         return {"answer": answer}
     except Exception as e:
         return {"error": str(e)}
