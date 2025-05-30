@@ -24,7 +24,7 @@ app.add_middleware(
 
 SESSION_STATE = {}
 
-@app.get("/")
+@app.get("/hello")
 async def root():
     return HTMLResponse("Hello! This is the Backend site of the PDF Chat Application.")
 
