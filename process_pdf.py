@@ -51,10 +51,6 @@ def process_pdf(file_path: str, session_id: str) -> str:
     with open(chunks_file, 'wb') as f:
         pickle.dump(chunk_list, f)
 
-    # Clean up RAM
-    del faiss_index
-    del embeddings
-
     return "PDF processed and indexed successfully."
 
 
