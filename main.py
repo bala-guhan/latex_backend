@@ -21,10 +21,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173",  # Local dev frontend
+    allow_origins=[
+        "http://localhost:5173",  # Local dev frontend
         "https://latex-frontend-self.vercel.app",  # Production frontend
-        "http://127.0.0.1:5173", 
-        "*"],  # React dev server
+        "http://127.0.0.1:5173", # Local dev frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
