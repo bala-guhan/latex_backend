@@ -45,28 +45,58 @@ async def root():
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    if not file.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-    
-    # Create a unique session ID
-    session_id = str(uuid.uuid4())
-    
-    # Create session directory
-    os.makedirs('session_data', exist_ok=True)
-    
-    # Save the uploaded file
-    file_path = f"session_data/{session_id}.pdf"
-    with open(file_path, "wb") as buffer:
-        content = await file.read()
-        buffer.write(content)
-    
-    # Start processing in background
-    asyncio.create_task(process_pdf_async(file_path, session_id))
-    
-    return {"session_id": session_id}
+    try:
+        print(f"Received upload request for file: {file.filename}")  # Debug log
+        
+        if not file.filename.endswith('.pdf'):
+            print(f"Invalid file type: {file.filename}")  # Debug log
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+        
+        # Create a unique session ID
+        session_id = str(uuid.uuid4())
+        print(f"Generated session ID: {session_id}")  # Debug log
+        
+        # Create session directory
+        session_dir = 'session_data'
+        os.makedirs(session_dir, exist_ok=True)
+        print(f"Created/verified session directory: {session_dir}")  # Debug log
+        
+        # Save the uploaded file
+        file_path = os.path.join(session_dir, f"{session_id}.pdf")
+        try:
+            content = await file.read()
+            print(f"Read file content, size: {len(content)} bytes")  # Debug log
+            
+            with open(file_path, "wb") as buffer:
+                buffer.write(content)
+            print(f"Saved file to: {file_path}")  # Debug log
+        except Exception as e:
+            print(f"Error saving file: {str(e)}")  # Debug log
+            raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
+        
+        # Start processing in background
+        try:
+            asyncio.create_task(process_pdf_async(file_path, session_id))
+            print(f"Started background processing for session: {session_id}")  # Debug log
+        except Exception as e:
+            print(f"Error starting background processing: {str(e)}")  # Debug log
+            # Clean up the uploaded file if background processing fails
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            raise HTTPException(status_code=500, detail=f"Error starting processing: {str(e)}")
+        
+        return {"session_id": session_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Unexpected error in upload endpoint: {str(e)}")  # Debug log
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 async def process_pdf_async(file_path: str, session_id: str):
     try:
+        print(f"Starting PDF processing for session: {session_id}")  # Debug log
+        
         # Update status to processing
         processing_status[session_id] = {
             "status": "processing",
@@ -74,7 +104,9 @@ async def process_pdf_async(file_path: str, session_id: str):
         }
         
         # Process the PDF
+        print(f"Calling process_pdf for file: {file_path}")  # Debug log
         process_pdf(file_path, session_id)
+        print(f"PDF processing completed for session: {session_id}")  # Debug log
         
         # Update status to completed
         processing_status[session_id] = {
@@ -82,6 +114,7 @@ async def process_pdf_async(file_path: str, session_id: str):
             "message": "Processing completed"
         }
     except Exception as e:
+        print(f"Error in process_pdf_async: {str(e)}")  # Debug log
         # Update status to error and clean up
         processing_status[session_id] = {
             "status": "error",
